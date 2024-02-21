@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+
+
+    <!-- FrameLayout to contain the slanted ImageView -->
+    <!-- Slanted ImageView -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="203dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/fruits_for_opening_screen_down" />
+
+    <ImageView
+        android:id="@+id/cameraIcon"
+        android:layout_width="183dp"
+        android:layout_height="150dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="106dp"
+        android:layout_marginTop="270dp"
+        android:layout_marginEnd="106dp"
+        android:layout_marginBottom="295dp"
+        android:src="@drawable/icon_of_camera" />
+
+    <!-- Add any additional UI elements as needed -->
+
+</RelativeLayout>
