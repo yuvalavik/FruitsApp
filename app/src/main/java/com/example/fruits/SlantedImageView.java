@@ -39,7 +39,7 @@ public class SlantedImageView extends AppCompatImageView {
         float scale =  viewWidth / (originalWidth * (1 + 0.5f * 0.5f)); // Adjust the scaling factor to make the picture bigger
 
         matrix.reset();
-        matrix.setSkew(0f, -0.2f); // Adjust the slant angle here (negative value for slanting from the bottom)
+        matrix.setSkew(0f, -0.25f); // Adjust the slant angle here (negative value for slanting from the bottom)
         matrix.postScale(scale * 1.2f, 1f); // Increase the scaling factor to make the picture bigger
 
         // Calculate the amount of cropping required from the bottom
