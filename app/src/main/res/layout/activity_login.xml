@@ -5,30 +5,41 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF">
 
-
-
-    <!-- FrameLayout to contain the slanted ImageView -->
-    <!-- Slanted ImageView -->
+    <!-- Slanted ImageView at the top -->
     <com.example.fruits.SlantedImageView
+        android:id="@+id/slantedImageView"
         android:layout_width="match_parent"
-        android:layout_height="350dp"
+        android:layout_height="244dp"
         android:src="@drawable/fruits_for_opening_screen_down"
         tools:ignore="MissingClass" />
 
+    <!-- TextView centered below the SlantedImageView -->
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/slantedImageView"
+        android:layout_centerHorizontal="true"
+        android:text="@string/title"
+        android:textSize="26sp"
+        android:background="#CCCCCC"
+        android:padding="16dp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        />
 
-    <ImageView
+    <!-- Image centered below the TextView -->
+    <ImageButton
         android:id="@+id/cameraIcon"
-        android:layout_width="183dp"
-        android:layout_height="150dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="106dp"
-        android:layout_marginTop="270dp"
-        android:layout_marginEnd="106dp"
-        android:layout_marginBottom="295dp"
-        android:src="@drawable/icon_of_camera" />
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_below="@id/textView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/camera"
+        tools:ignore="SpeakableTextPresentCheck" />
+
 
     <!-- Add any additional UI elements as needed -->
 
