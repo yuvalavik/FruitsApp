@@ -18,7 +18,7 @@
         android:theme="@style/Theme.Fruits"
         android:label="Fruits"
         tools:targetApi="s"
-        android:icon="@mipmap/fruits_for_opening_screen_down">
+        android:icon="@mipmap/fruits">
 
         <activity android:name=".LoginActivity"
             android:exported="true">
