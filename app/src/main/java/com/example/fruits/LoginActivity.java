@@ -67,7 +67,7 @@ public class LoginActivity extends AppCompatActivity {
         Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         videoCaptureLauncher.launch(takeVideoIntent);
     }
-
+//sss
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
