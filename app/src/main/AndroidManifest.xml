@@ -2,6 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Declare CAMERA permission -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Declare that the app does not require a camera -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -9,7 +17,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Fruits"
         android:label="Fruits"
-        tools:targetApi="s">
+        tools:targetApi="s"
+        android:icon="@mipmap/fruits_for_opening_screen_down">
 
         <activity android:name=".LoginActivity"
             android:exported="true">
@@ -21,3 +30,4 @@
 
     </application>
 </manifest>
+
