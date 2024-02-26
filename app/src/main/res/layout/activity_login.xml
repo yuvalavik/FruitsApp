@@ -41,6 +41,14 @@
         tools:ignore="SpeakableTextPresentCheck" />
 
 
-    <!-- Add any additional UI elements as needed -->
+    <!-- Slanted ImageView at the down -->
+    <com.example.fruits.SlantImageViewDown
+        android:id="@+id/SlantImageViewDown"
+        android:layout_width="match_parent"
+        android:layout_height="260dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="0dp"
+        android:src="@drawable/opaning_down"
+        tools:ignore="MissingClass" />
 
 </RelativeLayout>
