@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Fruits</string>
     <string name="title">Let\'s check your fruits</string>
+    <string name="stop_camera">stop camera</string>
 </resources>

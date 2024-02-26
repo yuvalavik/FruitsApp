@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF">
 
+
     <!-- Slanted ImageView at the top -->
     <com.example.fruits.SlantedImageView
         android:id="@+id/slantedImageView"
@@ -25,9 +26,33 @@
         android:background="#CCCCCC"
         android:padding="16dp"
         android:textStyle="bold"
-        android:textColor="@color/black"
-        />
+        android:textColor="@color/black" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:orientation="vertical">
 
+        <Button
+            android:id="@+id/stop"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:layout_gravity="end"
+            android:layout_marginBottom="0dp"
+            android:backgroundTint="@android:color/holo_red_light"
+            android:text="@string/stop_camera"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:visibility="gone" />
+
+
+    </LinearLayout>
     <!-- Image centered below the TextView -->
     <ImageButton
         android:id="@+id/cameraIcon"
@@ -36,9 +61,12 @@
         android:layout_below="@id/textView"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"
+        android:visibility="visible"
         android:background="@android:color/transparent"
         android:src="@drawable/camera"
         tools:ignore="SpeakableTextPresentCheck" />
+
+    <!-- PreviewView for camera preview -->
 
 
     <!-- Slanted ImageView at the down -->
