@@ -1,8 +1,8 @@
 package com.example.fruits;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,10 +28,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,8 +47,13 @@ public class LoginActivity extends AppCompatActivity {
     private ExecutorService cameraExecutor;
     private boolean isCameraPermissionGranted = false;
     private ImageButton cameraButton;
+    private Button sendButton;
     private Handler handler = new Handler();
-    private boolean captureImages = false;
+    private ImageCapture imageCapture;
+    private ProcessCameraProvider cameraProvider;
+
+    private String res;
+    private String encodedImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,32 +61,34 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         cameraButton = findViewById(R.id.cameraIcon);
+        sendButton = findViewById(R.id.stop);
 
         cameraButton.setOnClickListener(v -> {
             if (isCameraPermissionGranted) {
-                startCapturingImages();
+                openCamera();
             } else {
                 requestCameraPermission();
+            }
+        });
+
+        sendButton.setOnClickListener(v -> {
+            if (imageCapture != null) {
+                captureAndSendImage();
             }
         });
 
         cameraExecutor = Executors.newSingleThreadExecutor();
     }
 
-    private void startCapturingImages() {
-        captureImages = true; // Set captureImages flag to true
-        takePhotoRepeatedly();
-    }
-
-    private void takePhotoRepeatedly() {
+    private void openCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                cameraProvider = cameraProviderFuture.get();
 
                 // Set up the camera preview
                 Preview preview = new Preview.Builder().build();
-                ImageCapture imageCapture = new ImageCapture.Builder().build();
+                imageCapture = new ImageCapture.Builder().build();
 
                 CameraSelector cameraSelector = new CameraSelector.Builder()
                         .requireLensFacing(CameraSelector.LENS_FACING_BACK)
@@ -95,14 +100,12 @@ public class LoginActivity extends AppCompatActivity {
                 // Set the preview to the PreviewView
                 PreviewView previewView = findViewById(R.id.previewView);
                 previewView.setVisibility(View.VISIBLE);
-                Button stop = findViewById(R.id.stop);
-                stop.setVisibility(View.VISIBLE);
                 cameraButton.setVisibility(View.GONE);
+                sendButton.setVisibility(View.VISIBLE);
+                TextView t = findViewById(R.id.textView);
+                t.setVisibility(View.GONE);
 
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-                // Capture images repeatedly
-                captureImageRepeatedly(imageCapture);
 
             } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
@@ -110,38 +113,28 @@ public class LoginActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
-    private void captureImageRepeatedly(ImageCapture imageCapture) {
-        handler.postDelayed(new Runnable() {
+    private void captureAndSendImage() {
+        imageCapture.takePicture(cameraExecutor, new ImageCapture.OnImageCapturedCallback() {
             @Override
-            public void run() {
-                if (captureImages) {
-                    imageCapture.takePicture(cameraExecutor, new ImageCapture.OnImageCapturedCallback() {
-                        @Override
-                        public void onCaptureSuccess(@NonNull ImageProxy image) {
-                            runOnUiThread(() -> {
-                                // Convert ImageProxy to byte array
-                                byte[] imageData = convertImageProxyToByteArray(image);
-                                String imageDataString = new String(imageData);
+            public void onCaptureSuccess(@NonNull ImageProxy image) {
+                runOnUiThread(() -> {
+                    // Convert ImageProxy to byte array
+                    byte[] imageData = convertImageProxyToByteArray(image);
 
-                                // Log the byte array as a string
-                                // Send image to server
-                                sendImageToServer(imageData);
+                    // Send image to server
+                    sendImageToServer(imageData);
 
-                                image.close();
-                            });
-                        }
-
-                        @Override
-                        public void onError(@NonNull ImageCaptureException exception) {
-                            super.onError(exception);
-                            Log.e("ImageCapture", "Error capturing image: " + exception.getMessage());
-                        }
-                    });
-                    // Capture the next image after 0.5 seconds
-                    handler.postDelayed(this, 500);
-                }
+                    image.close();
+                    closeCamera();
+                });
             }
-        }, 500); // Initial delay of 0.5 seconds
+
+            @Override
+            public void onError(@NonNull ImageCaptureException exception) {
+                super.onError(exception);
+                Log.e("ImageCapture", "Error capturing image: " + exception.getMessage());
+            }
+        });
     }
 
     private void requestCameraPermission() {
@@ -156,7 +149,7 @@ public class LoginActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 isCameraPermissionGranted = true;
-                startCapturingImages();
+                openCamera();
             } else {
                 Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
             }
@@ -195,7 +188,7 @@ public class LoginActivity extends AppCompatActivity {
                 MediaType MEDIA_TYPE_JPEG = MediaType.parse("image/jpeg");
 
                 // Encode the byte array using Base64
-                String encodedImage = Base64.encodeToString(imageData, Base64.DEFAULT);
+                encodedImage = Base64.encodeToString(imageData, Base64.DEFAULT);
 
                 // Create request body with the encoded image data
                 RequestBody requestBody = RequestBody.create(encodedImage, MEDIA_TYPE_JPEG);
@@ -211,13 +204,41 @@ public class LoginActivity extends AppCompatActivity {
                 }
 
                 // If you need to process the response from the server, you can do it here
-                String responseBody = response.body().string();
-                Log.d("ServerResponse", responseBody);
+                res = response.body().string();
+                Log.d("ServerResponse", res);
 
             } catch (IOException e) {
                 Log.e("SendImage", "Error sending image to server", e);
             }
         }).start();
+    }
+
+    private void closeCamera() {
+        if (cameraProvider != null) {
+            // Unbind the cameraProvider
+            cameraProvider.unbindAll();
+            cameraProvider = null;
+            // option to save the pic and than send its pass if the pic is too large
+            //        File imageFile = saveImageToFile(res);
+            //
+            //        intent.putExtra("imageFilePath", imageFile.getAbsolutePath());
+            // Start the DisplayImageActivity
+            Intent intent = new Intent(LoginActivity.this, DisplayImageActivity.class);
+            intent.putExtra("imageData", res);
+            intent.putExtra("original", encodedImage);
+            startActivity(intent);
+
+            // Add a callback to execute visibility changes after the activity is started
+            Handler handler = new Handler();
+            handler.postDelayed(() -> {
+                PreviewView previewView = findViewById(R.id.previewView);
+                previewView.setVisibility(View.GONE);
+                sendButton.setVisibility(View.GONE);
+                cameraButton.setVisibility(View.VISIBLE);
+                TextView t = findViewById(R.id.textView);
+                t.setVisibility(View.VISIBLE);
+            }, 600); // Delay in milliseconds before executing the callback (adjust as needed)
+        }
     }
 
 
@@ -227,11 +248,6 @@ public class LoginActivity extends AppCompatActivity {
         if (cameraExecutor != null) {
             cameraExecutor.shutdown();
         }
-        captureImages = false; // Stop capturing images when the activity is destroyed
         handler.removeCallbacksAndMessages(null); // Remove all pending callbacks and messages
     }
 }
-
-
-
-

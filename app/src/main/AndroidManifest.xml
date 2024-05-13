@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-
     <!-- Declare CAMERA permission -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -36,6 +35,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Add DisplayImageActivity -->
+        <activity
+            android:name=".DisplayImageActivity"
+            android:label="Display Image">
+        </activity>
+
     </application>
 </manifest>
-
