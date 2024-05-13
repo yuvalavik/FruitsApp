@@ -4,6 +4,12 @@
 
     <!-- Declare CAMERA permission -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <!-- Declare that the app does not require a camera -->
     <uses-feature
@@ -11,6 +17,7 @@
         android:required="false" />
 
     <application
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -18,7 +25,7 @@
         android:theme="@style/Theme.Fruits"
         android:label="Fruits"
         tools:targetApi="s"
-        android:icon="@mipmap/fruits_for_opening_screen_down">
+        android:icon="@mipmap/fruits">
 
         <activity android:name=".LoginActivity"
             android:exported="true">
@@ -28,6 +35,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Add DisplayImageActivity -->
+        <activity
+            android:name=".DisplayImageActivity"
+            android:label="Display Image">
+        </activity>
+
     </application>
 </manifest>
-
