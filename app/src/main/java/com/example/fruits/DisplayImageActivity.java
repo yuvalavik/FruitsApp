@@ -129,11 +129,13 @@ public class DisplayImageActivity extends AppCompatActivity {
         ImageView bad = findViewById(R.id.bad_rec);
         good.setVisibility(View.GONE);
         bad.setVisibility(View.GONE);
-        Button done = findViewById(R.id.sendServer);
-        done.setVisibility(View.VISIBLE);
+        Button end = findViewById(R.id.end);
+        end.setVisibility(View.VISIBLE);
+        end.setOnClickListener(v-> sendToTheServer(emailAddress));
         TextView view = findViewById(R.id.tap);
         view.setText("Choose all the wrong recognitions");
         view.setVisibility(View.VISIBLE);
+
     }
 
     /**
@@ -150,6 +152,9 @@ public class DisplayImageActivity extends AppCompatActivity {
      * @param email
      */
     private void sendToTheServer(String email) {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        float screenWidth = displayMetrics.widthPixels;
         // Create OkHttpClient instance
         OkHttpClient client = new OkHttpClient();
 
@@ -159,7 +164,20 @@ public class DisplayImageActivity extends AppCompatActivity {
         JSONObject postData = new JSONObject();
         try {
             postData.put("email", email);
-            postData.put("originalImageData", original);
+            postData.put("original", original);
+            JSONArray userChoicesArray = new JSONArray();
+            for (Pair<Float, Float> pair : badReview) {
+                float r_x = pair.first / screenWidth;  // Calculate relative x-coordinate
+                float r_y = pair.second / dpToPx();  // Calculate relative y-coordinate
+                JSONArray tuple = new JSONArray();
+                tuple.put(r_x);
+                tuple.put(r_y);
+                userChoicesArray.put(tuple);
+            }
+            postData.put("user_choices", userChoicesArray);
+            JSONArray labels = new JSONArray();
+            postData.put("labels", new JSONArray(reviews));
+            /////////
         } catch (JSONException e) {
             e.printStackTrace();
             return; // Return early if there's an error creating JSON data
@@ -190,6 +208,7 @@ public class DisplayImageActivity extends AppCompatActivity {
                 String responseData = response.body().string();
             }
         });
+        finish();
     }
 
     /**
@@ -239,7 +258,7 @@ public class DisplayImageActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 e.printStackTrace();
-                ////// לבטלללללללללללללל
+                ////// לבטלללללללללללללל נטו לבדיקה
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -251,6 +270,7 @@ public class DisplayImageActivity extends AppCompatActivity {
                         done.setVisibility(View.GONE);
                         TextView view = findViewById(R.id.tap);
                         view.setVisibility(View.GONE);
+
                     }
                 });
             }
@@ -316,8 +336,6 @@ public class DisplayImageActivity extends AppCompatActivity {
             return true; // Indicates that the touch event has been handled
         });
 
-        Button done = findViewById(R.id.sendServer);
-        done.setOnClickListener(v -> sendToTheServer(emailAddress));
     }
 
     @SuppressLint("SetTextI18n")
