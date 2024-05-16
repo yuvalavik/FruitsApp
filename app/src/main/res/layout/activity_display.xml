@@ -74,6 +74,14 @@
             android:layout_gravity="center"
             android:id="@+id/sendServer"/>
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/done"
+            android:visibility="gone"
+            android:id="@+id/end"/>
+
+
     </LinearLayout>
 
     <!-- Slanted ImageView at the bottom -->
