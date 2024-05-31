@@ -10,12 +10,13 @@
     <com.example.fruits.SlantedImageView
         android:id="@+id/slantedImageView"
         android:layout_width="match_parent"
-        android:layout_height="244dp"
+        android:layout_height="150dp"
         android:src="@drawable/fruits_for_opening_screen_down"
         tools:ignore="MissingClass" />
 
     <!-- TextView centered below the SlantedImageView -->
     <TextView
+        android:layout_marginTop="90dp"
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -34,22 +35,38 @@
         android:layout_centerVertical="true"
         android:orientation="vertical">
 
-        <Button
-            android:id="@+id/stop"
-            android:layout_width="100dp"
-            android:layout_height="50dp"
-            android:layout_gravity="end"
-            android:layout_marginBottom="0dp"
-            android:backgroundTint="#00FF00"
-            android:text="@string/stop_camera"
-            android:textSize="14sp"
-            android:visibility="gone" />
 
         <androidx.camera.view.PreviewView
+            android:layout_marginTop="40dp"
             android:id="@+id/previewView"
             android:layout_width="match_parent"
             android:layout_height="300dp"
             android:visibility="gone" />
+
+        <Button
+            android:id="@+id/stop"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:layout_below="@id/previewView"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="16dp"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#00FF00"
+            android:text="@string/stop_camera"
+            android:textSize="14sp"
+            android:visibility="gone" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/wait"
+            android:text="@string/wait"
+            android:textSize="20sp"
+            android:layout_below="@id/previewView"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="16dp"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            />
 
 
     </LinearLayout>
@@ -68,12 +85,11 @@
 
     <!-- PreviewView for camera preview -->
 
-
     <!-- Slanted ImageView at the down -->
     <com.example.fruits.SlantImageViewDown
         android:id="@+id/SlantImageViewDown"
         android:layout_width="match_parent"
-        android:layout_height="260dp"
+        android:layout_height="200dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="0dp"
         android:src="@drawable/opaning_down"

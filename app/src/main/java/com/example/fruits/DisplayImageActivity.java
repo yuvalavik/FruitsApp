@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
@@ -17,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,9 +28,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -42,12 +53,13 @@ public class DisplayImageActivity extends AppCompatActivity {
     private String original;
     List<Pair<Float, Float>> userChoice = new ArrayList<>();
     List<Pair<Float, Float>> badReview = new ArrayList<>();
-    private static final String SERVER_URL = "http://172.20.10.8:3000/review";
-    private static final String SERVER_URL2 = "http://172.20.10.8:3000/oneImage";
+    private static final String SERVER_URL = "https://4609-132-70-66-11.ngrok-free.app/review";
+    private static final String SERVER_URL2 = "https://4609-132-70-66-11.ngrok-free.app/oneImage";
     private ImageView imageView;
     private String emailAddress;
     private List<String> reviews = new ArrayList<>();
     private boolean isDialogShown = false;
+    private Bitmap bitmap;
 
 
 
@@ -58,10 +70,35 @@ public class DisplayImageActivity extends AppCompatActivity {
         setContentView(R.layout.activity_display);
 
         // Retrieve the image data from intent extras
-        String imageData = getIntent().getStringExtra("imageData");
+        String imageData = getIntent().getStringExtra("imageFilePath");
         original = getIntent().getStringExtra("original");
+//        Log.d("imageFilePath",imageData);
         Button done = findViewById(R.id.sendServer);
-        done.setOnClickListener(v -> sendForRec());
+        //done.setOnClickListener(v -> sendForRec());
+        done.setOnClickListener(v->{
+            CompletableFuture<Integer> future = sendForRec();
+            future.thenAccept(res ->{
+                    if (res == 1){
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Set the Bitmap to the ImageView
+                                imageView.setImageBitmap(bitmap);
+                                ImageView good = findViewById(R.id.good_rec);
+                                ImageView bad = findViewById(R.id.bad_rec);
+                                good.setVisibility(View.VISIBLE);
+                                bad.setVisibility(View.VISIBLE);
+                                Button done = findViewById(R.id.sendServer);
+                                done.setVisibility(View.GONE);
+                                TextView view = findViewById(R.id.tap);
+                                view.setVisibility(View.GONE);
+                            }
+                        });
+                    }
+            });
+        });
+
+
 
         // Display the image in the ImageView
          imageView = findViewById(R.id.response);
@@ -72,12 +109,14 @@ public class DisplayImageActivity extends AppCompatActivity {
                 @Override
                 public boolean onTouch(View v, MotionEvent e) {
                     // Calculate relative coordinates
-                    float x = e.getX();
-                    float y = e.getY();
-                    Pair<Float, Float> clicked = new Pair<>(x, y);
-                    userChoice.add(clicked);
+                    if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                        float x = e.getX();
+                        float y = e.getY();
+                        Pair<Float, Float> clicked = new Pair<>(x, y);
+                        Log.d("userchoises","x:" + x + " y:" + y);
+                        userChoice.add(clicked);
+                    }
                     return true; // Indicates that the touch event has been handled
-
                 }
             });
         }
@@ -91,7 +130,19 @@ public class DisplayImageActivity extends AppCompatActivity {
         bad_rec.setOnClickListener(v -> askToHelpImprove());
 
 
+        OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finish(); // Uncomment this line if you want to finish the activity on back press
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+
     }
+
+
+
+
 
     /**
      * after pressing the bad rec button ask him to help to improve.
@@ -210,28 +261,51 @@ public class DisplayImageActivity extends AppCompatActivity {
         });
         finish();
     }
+    private String readEncodedImageFromFile(String filePath) {
+        StringBuilder encodedData = new StringBuilder();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try (InputStream inputStream = Files.newInputStream(Paths.get(filePath));
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    encodedData.append(line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return encodedData.toString();
+    }
+
+
+
+
+
+
 
     /**
      * send to the server all the coordinates that the user pressed and the original picture so he will get
      *  the rec of each fruit.
      */
-    private void sendForRec() {
+    private CompletableFuture<Integer> sendForRec() {
+        CompletableFuture<Integer> i = new CompletableFuture<>();
+
         // Get screen dimensions
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        float screenWidth = displayMetrics.widthPixels;
+        ImageView imageView = findViewById(R.id.response);
+        float imageViewWidth = imageView.getWidth();
 
         // Prepare JSON object with user choices and original data
         JSONObject requestData = new JSONObject();
         try {
             // Add original data
-            requestData.put("original", original);
+            String org = readEncodedImageFromFile(original);
+            requestData.put("original", org);
 
             // Add user choices as an array of tuples with relative coordinates
             JSONArray userChoicesArray = new JSONArray();
             for (Pair<Float, Float> pair : userChoice) {
-                float r_x = pair.first / screenWidth;  // Calculate relative x-coordinate
-                float r_y = pair.second / dpToPx();  // Calculate relative y-coordinate
+                float r_x = pair.first / imageViewWidth;  // Calculate relative x-coordinate
+                float r_y = pair.second / imageView.getHeight();  // Calculate relative y-coordinate
                 JSONArray tuple = new JSONArray();
                 tuple.put(r_x);
                 tuple.put(r_y);
@@ -240,14 +314,16 @@ public class DisplayImageActivity extends AppCompatActivity {
             requestData.put("user_choices", userChoicesArray);
         } catch (JSONException e) {
             e.printStackTrace();
-            return;
+            i.complete(-1);
         }
+
         // Create OkHttp client
         OkHttpClient client = new OkHttpClient();
 
-// Create request body with JSON data
-        RequestBody requestBody = RequestBody.create( requestData.toString(),MediaType.parse("application/json"));
-// Create HTTP request
+        // Create request body with JSON data
+        RequestBody requestBody = RequestBody.create(requestData.toString(), MediaType.parse("application/json"));
+
+        // Create HTTP request
         Request request = new Request.Builder()
                 .url(SERVER_URL2)
                 .post(requestBody)
@@ -258,21 +334,7 @@ public class DisplayImageActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 e.printStackTrace();
-                ////// לבטלללללללללללללל נטו לבדיקה
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ImageView good = findViewById(R.id.good_rec);
-                        ImageView bad = findViewById(R.id.bad_rec);
-                        good.setVisibility(View.VISIBLE);
-                        bad.setVisibility(View.VISIBLE);
-                        Button done = findViewById(R.id.sendServer);
-                        done.setVisibility(View.GONE);
-                        TextView view = findViewById(R.id.tap);
-                        view.setVisibility(View.GONE);
-
-                    }
-                });
+                i.complete(-1);
             }
 
             @Override
@@ -281,34 +343,41 @@ public class DisplayImageActivity extends AppCompatActivity {
                     throw new IOException("Unexpected code " + response);
                 }
 
-                // Get the response body as a byte array
-                byte[] imageData = response.body().bytes();
+                // Ensure the response body is not null
+                if (response.body() != null) {
+                    String responseBody = response.body().string(); // Get the response body as a string
 
-                // Decode the byte array into a Bitmap
-                Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+                    try {
+                        // Parse the JSON response
+                        JSONObject jsonObject = new JSONObject(responseBody);
+                        String base64Image = jsonObject.getString("pressed_object_images");
 
-                // Update UI on the main thread
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // Set the Bitmap to the ImageView
-                        imageView.setImageBitmap(bitmap);
-                        ImageView good = findViewById(R.id.good_rec);
-                        ImageView bad = findViewById(R.id.bad_rec);
-                        good.setVisibility(View.VISIBLE);
-                        bad.setVisibility(View.VISIBLE);
-                        Button done = findViewById(R.id.sendServer);
-                        done.setVisibility(View.GONE);
-                        TextView view = findViewById(R.id.tap);
-                        view.setVisibility(View.GONE);
+                        // Decode the Base64 string
+                        byte[] imageBytes = Base64.decode(base64Image, Base64.DEFAULT);
+
+                        // Convert byte array to Bitmap (for Android)
+                        bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+
+                        // You can now use the bitmap (e.g., set it to an ImageView)
+                        // For example: imageView.setImageBitmap(bitmap);
+
+                        // Log the successful decoding
+                        Log.d("ImageDownload", "Image decoded successfully");
+
+                        // Complete the future with success
+                        i.complete(1);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        i.complete(-1);
                     }
-                });
+                } else {
+                    throw new IOException("Response body is null");
+                }
             }
         });
 
-
-
-
+        return i;
     }
 
     /**
@@ -318,7 +387,7 @@ public class DisplayImageActivity extends AppCompatActivity {
 
     private int dpToPx() {
         float density = getResources().getDisplayMetrics().density;
-        return Math.round((float) 250 * density);
+        return Math.round((float) 320 * density);
     }
     @SuppressLint("ClickableViewAccessibility")
     private void getWrongDetections() {

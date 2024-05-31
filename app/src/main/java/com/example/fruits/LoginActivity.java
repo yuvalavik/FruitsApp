@@ -3,8 +3,11 @@ package com.example.fruits;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.Image;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.util.Base64;
 import android.util.Log;
@@ -28,8 +31,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,7 +49,7 @@ import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 100;
-    private static final String SERVER_URL = "http://172.20.10.8:3000/upload";
+    private static final String SERVER_URL = "https://4609-132-70-66-11.ngrok-free.app/upload";
 
     private ExecutorService cameraExecutor;
     private boolean isCameraPermissionGranted = false;
@@ -52,7 +59,7 @@ public class LoginActivity extends AppCompatActivity {
     private ImageCapture imageCapture;
     private ProcessCameraProvider cameraProvider;
 
-    private String res;
+    private String base64ImageString;
     private String encodedImage;
 
     @Override
@@ -74,6 +81,9 @@ public class LoginActivity extends AppCompatActivity {
         sendButton.setOnClickListener(v -> {
             if (imageCapture != null) {
                 captureAndSendImage();
+                sendButton.setVisibility(View.GONE);
+                TextView t = findViewById(R.id.wait);
+                t.setVisibility(View.VISIBLE);
             }
         });
 
@@ -117,16 +127,21 @@ public class LoginActivity extends AppCompatActivity {
         imageCapture.takePicture(cameraExecutor, new ImageCapture.OnImageCapturedCallback() {
             @Override
             public void onCaptureSuccess(@NonNull ImageProxy image) {
-                runOnUiThread(() -> {
-                    // Convert ImageProxy to byte array
-                    byte[] imageData = convertImageProxyToByteArray(image);
+                byte[] imageData = convertImageProxyToByteArray(image);
 
-                    // Send image to server
-                    sendImageToServer(imageData);
+                // Send image to server
 
-                    image.close();
-                    closeCamera();
-                });
+                    CompletableFuture<Integer> future = sendImageToServer(imageData);
+
+                    future.thenAccept(result -> {
+                        if (result ==1) {
+                            image.close();
+                            closeCamera();
+                        }
+                    });
+
+
+
             }
 
             @Override
@@ -173,25 +188,26 @@ public class LoginActivity extends AppCompatActivity {
             // Read all bytes from the buffer into the byte array
             buffer.get(bytes);
 
-            // Release the ImageProxy
-            imageProxy.close();
-
             return bytes;
         }
         return null;
     }
 
-    private void sendImageToServer(byte[] imageData) {
+    private CompletableFuture<Integer> sendImageToServer(byte[] imageData) {
+        CompletableFuture<Integer> i = new CompletableFuture<>();
         new Thread(() -> {
             try {
+
                 OkHttpClient client = new OkHttpClient();
                 MediaType MEDIA_TYPE_JPEG = MediaType.parse("image/jpeg");
 
                 // Encode the byte array using Base64
                 encodedImage = Base64.encodeToString(imageData, Base64.DEFAULT);
+//                Log.d("front",encodedImage);
 
                 // Create request body with the encoded image data
                 RequestBody requestBody = RequestBody.create(encodedImage, MEDIA_TYPE_JPEG);
+
 
                 Request request = new Request.Builder()
                         .url(SERVER_URL)
@@ -204,43 +220,43 @@ public class LoginActivity extends AppCompatActivity {
                 }
 
                 // If you need to process the response from the server, you can do it here
-                res = response.body().string();
+                String res = response.body().string();
+                base64ImageString = extractBase64Image(res);
                 Log.d("ServerResponse", res);
+                i.complete(1);
 
             } catch (IOException e) {
                 Log.e("SendImage", "Error sending image to server", e);
+                i.complete(-1);
             }
         }).start();
+        return i;
     }
+
+    private String extractBase64Image(String jsonResponse) {
+        // Assuming the JSON response is in the format {"processed_image":"<base64_string>"}
+        return jsonResponse.split("\"processed_image\":\"")[1].split("\"")[0];
+    }
+
 
     private void closeCamera() {
         if (cameraProvider != null) {
             // Unbind the cameraProvider
-            cameraProvider.unbindAll();
-            cameraProvider = null;
+
             // option to save the pic and than send its pass if the pic is too large
-            //        File imageFile = saveImageToFile(res);
-            //
-            //        intent.putExtra("imageFilePath", imageFile.getAbsolutePath());
+            File imageFile = saveImageToFile(base64ImageString,"processed_image.jpg");
+            File oe = saveBase64StringToFile(encodedImage,"encoded_image.jpg");
+
             // Start the DisplayImageActivity
             Intent intent = new Intent(LoginActivity.this, DisplayImageActivity.class);
-            intent.putExtra("imageData", res);
-            intent.putExtra("original", encodedImage);
+            intent.putExtra("imageFilePath", imageFile.getAbsolutePath());
+            intent.putExtra("original", oe.getAbsolutePath());
             startActivity(intent);
+            cameraProvider.unbindAll();
+            cameraProvider = null;
 
-            // Add a callback to execute visibility changes after the activity is started
-            Handler handler = new Handler();
-            handler.postDelayed(() -> {
-                PreviewView previewView = findViewById(R.id.previewView);
-                previewView.setVisibility(View.GONE);
-                sendButton.setVisibility(View.GONE);
-                cameraButton.setVisibility(View.VISIBLE);
-                TextView t = findViewById(R.id.textView);
-                t.setVisibility(View.VISIBLE);
-            }, 600); // Delay in milliseconds before executing the callback (adjust as needed)
         }
     }
-
 
     @Override
     protected void onDestroy() {
@@ -250,4 +266,55 @@ public class LoginActivity extends AppCompatActivity {
         }
         handler.removeCallbacksAndMessages(null); // Remove all pending callbacks and messages
     }
+
+    private File saveImageToFile(String base64ImageString,String s) {
+        // Decode Base64 string to byte array
+        byte[] decodedBytes = Base64.decode(base64ImageString, Base64.DEFAULT);
+
+        // Create a bitmap from the decoded byte array
+        Bitmap bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+
+        // Create a file in the external storage directory
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        if (storageDir != null && !storageDir.exists()) {
+            storageDir.mkdirs();
+        }
+        File imageFile = new File(storageDir, s);
+
+        // Write the bitmap to the file
+        try (FileOutputStream fos = new FileOutputStream(imageFile)) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+        } catch (IOException e) {
+            Log.e("SaveImage", "Error saving image to file", e);
+        }
+
+        return imageFile;
+    }
+    private File saveBase64StringToFile(String base64String, String fileName) {
+        File storageDir = getFilesDir();
+        File base64File = new File(storageDir, fileName);
+
+        try (FileOutputStream fos = new FileOutputStream(base64File)) {
+            fos.write(base64String.getBytes());
+        } catch (IOException e) {
+            Log.e("SaveBase64String", "Error saving Base64 string to file", e);
+        }
+
+        return base64File;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        PreviewView previewView = findViewById(R.id.previewView);
+        previewView.setVisibility(View.GONE);
+        TextView text = findViewById(R.id.wait);
+        text.setVisibility(View.GONE);
+        sendButton.setVisibility(View.GONE);
+        cameraButton.setVisibility(View.VISIBLE);
+        TextView t = findViewById(R.id.textView);
+        t.setVisibility(View.VISIBLE);
+
+    }
+
 }
