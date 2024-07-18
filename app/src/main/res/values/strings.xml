@@ -1,11 +1,12 @@
 <resources>
     <string name="app_name">Fruits</string>
     <string name="title">Let\'s check your fruits</string>
-    <string name="stop_camera">Send</string>
+    <string name="stop_camera">Pic</string>
     <string name="back">Go back</string>
     <string name="enter_your_email_address">Enter your email address</string>
     <string name="choose_your_fruits">Tap on all your fruits</string>
     <string name="done">Done</string>
     <string name="good_bad">Good/Bad …</string>
     <string name="wait">Wait...</string>
+    <string name="send">Send</string>
 </resources>

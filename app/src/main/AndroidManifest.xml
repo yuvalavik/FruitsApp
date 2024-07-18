@@ -10,6 +10,11 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <!-- Declare that the app does not require a camera -->
     <uses-feature
@@ -40,6 +45,7 @@
             android:name=".DisplayImageActivity"
             android:label="Display Image">
         </activity>
+        <uses-library android:name="com.google.android.tts" android:required="false" />
 
     </application>
 </manifest>
