@@ -9,7 +9,7 @@
     <com.example.fruits.SlantedImageView
         android:id="@+id/slantedImageView"
         android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="150dp"
         android:src="@drawable/fruits_for_opening_screen_down"
         tools:ignore="MissingClass" />
 
@@ -24,9 +24,31 @@
         <!-- Image View -->
         <ImageView
             android:id="@+id/response"
+            android:layout_width="wrap_content"
+            android:layout_height="300dp"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"/>
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="250dp"
-            android:layout_marginTop="30dp" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:id="@+id/modelAnswer"
+                android:textSize="20sp"
+                android:gravity="center"
+                android:layout_marginTop="10dp" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/voice"
+                android:src="@drawable/voice"/>
+
+        </LinearLayout>
 
         <!-- Linear Layout for Image Buttons -->
         <LinearLayout
@@ -41,8 +63,7 @@
                 android:layout_height="wrap_content"
                 android:backgroundTint="#00FF00"
                 android:minHeight="48dp"
-                android:src="@drawable/thumb_up"
-                android:visibility="gone" />
+                android:src="@drawable/thumb_up" />
 
             <ImageButton
                 android:id="@+id/bad_rec"
@@ -51,35 +72,21 @@
                 android:backgroundTint="#FF0000"
                 android:minHeight="48dp"
                 android:src="@drawable/thumb_down"
-                android:layout_marginStart="50dp"
-                android:visibility="gone" />
+                android:layout_marginStart="50dp" />
 
         </LinearLayout>
 
         <!-- TextView centered and enlarged -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/choose_your_fruits"
-            android:id="@+id/tap"
-            android:textSize="24sp"
-            android:gravity="center"
-            android:layout_marginTop="20dp" />
+
 
         <!-- Button centered vertically and horizontally -->
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/done"
-            android:layout_gravity="center"
-            android:id="@+id/sendServer"/>
+<!--        <Button-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="@string/done"-->
+<!--            android:layout_gravity="center"-->
+<!--            android:id="@+id/sendServer"/>-->
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/done"
-            android:visibility="gone"
-            android:id="@+id/end"/>
 
 
     </LinearLayout>
@@ -88,7 +95,7 @@
     <com.example.fruits.SlantImageViewDown
         android:id="@+id/SlantImageViewDown"
         android:layout_width="match_parent"
-        android:layout_height="230dp"
+        android:layout_height="200dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="0dp"
         android:src="@drawable/opaning_down"

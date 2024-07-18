@@ -5,14 +5,14 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF">
 
-
     <!-- Slanted ImageView at the top -->
     <com.example.fruits.SlantedImageView
         android:id="@+id/slantedImageView"
         android:layout_width="match_parent"
-        android:layout_height="244dp"
+        android:layout_height="150dp"
         android:src="@drawable/fruits_for_opening_screen_down"
         tools:ignore="MissingClass" />
+
 
     <!-- TextView centered below the SlantedImageView -->
     <TextView
@@ -21,39 +21,74 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/slantedImageView"
         android:layout_centerHorizontal="true"
+        android:layout_marginTop="90dp"
         android:text="@string/title"
         android:textSize="26sp"
         android:background="#CCCCCC"
         android:padding="16dp"
         android:textStyle="bold"
         android:textColor="@color/black" />
+
+    <!-- Layout for camera preview and buttons -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="400dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
         android:orientation="vertical">
 
+        <!-- TextView for displaying 'Wait...' -->
+        <TextView
+            android:id="@+id/wait"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginRight="16dp"
+            android:text="@string/wait"
+            android:textSize="20sp"
+            android:visibility="gone" />
+
+        <!-- Camera PreviewView -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginTop="40dp"
+            android:visibility="gone" />
+
+        <!-- ImageView for displaying the captured image with drawn rectangle -->
+        <com.example.fruits.DrawRectImageView
+            android:id="@+id/res"
+            android:layout_width="wrap_content"
+            android:layout_height="300dp"
+            android:layout_gravity="center_horizontal"
+            android:adjustViewBounds="true"
+            android:visibility="gone" />
+
+        <!-- Button to stop camera -->
         <Button
             android:id="@+id/stop"
             android:layout_width="100dp"
             android:layout_height="50dp"
-            android:layout_gravity="end"
-            android:layout_marginBottom="0dp"
+            android:layout_marginTop="16dp"
             android:backgroundTint="#00FF00"
             android:text="@string/stop_camera"
             android:textSize="14sp"
             android:visibility="gone" />
 
-        <androidx.camera.view.PreviewView
-            android:id="@+id/previewView"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"
+        <!-- Button to send captured image -->
+        <Button
+            android:id="@+id/send"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#00FF00"
+            android:text="@string/send"
+            android:textSize="14sp"
             android:visibility="gone" />
 
-
     </LinearLayout>
-    <!-- Image centered below the TextView -->
+
+    <!-- ImageButton for capturing image -->
     <ImageButton
         android:id="@+id/cameraIcon"
         android:layout_width="120dp"
@@ -66,14 +101,11 @@
         android:src="@drawable/camera"
         tools:ignore="SpeakableTextPresentCheck" />
 
-    <!-- PreviewView for camera preview -->
-
-
-    <!-- Slanted ImageView at the down -->
+    <!-- Slanted ImageView at the bottom -->
     <com.example.fruits.SlantImageViewDown
         android:id="@+id/SlantImageViewDown"
         android:layout_width="match_parent"
-        android:layout_height="260dp"
+        android:layout_height="200dp"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="0dp"
         android:src="@drawable/opaning_down"

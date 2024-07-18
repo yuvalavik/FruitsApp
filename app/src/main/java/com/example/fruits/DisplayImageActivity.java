@@ -3,32 +3,34 @@ package com.example.fruits;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
+
 import android.os.Bundle;
 import android.text.TextUtils;
+
+import android.util.Base64;
 import android.util.Log;
-import android.util.Pair;
-import android.view.MotionEvent;
+
 import android.view.View;
-import android.widget.Button;
+
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import android.util.DisplayMetrics;
-
-import org.json.JSONArray;
+import android.speech.tts.TextToSpeech;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Locale;
+
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -38,16 +40,14 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+
 public class DisplayImageActivity extends AppCompatActivity {
-    private String original;
-    List<Pair<Float, Float>> userChoice = new ArrayList<>();
-    List<Pair<Float, Float>> badReview = new ArrayList<>();
-    private static final String SERVER_URL = "http://172.20.10.8:3000/review";
-    private static final String SERVER_URL2 = "http://172.20.10.8:3000/oneImage";
-    private ImageView imageView;
+    private static final String SERVER_URL = "https://5cc3-132-70-66-11.ngrok-free.app/review";
     private String emailAddress;
-    private List<String> reviews = new ArrayList<>();
+
     private boolean isDialogShown = false;
+    private TextToSpeech textToSpeech;
+    private Bitmap bitmap;
 
 
 
@@ -57,30 +57,50 @@ public class DisplayImageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_display);
 
-        // Retrieve the image data from intent extras
-        String imageData = getIntent().getStringExtra("imageData");
-        original = getIntent().getStringExtra("original");
-        Button done = findViewById(R.id.sendServer);
-        done.setOnClickListener(v -> sendForRec());
+        String original = getIntent().getStringExtra("original");
+        String type = getIntent().getStringExtra("type");
+
+        textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            /**
+             * this is override for the init of TextToSpeech API it checks if it got right status of sucsses and than try to set the
+             * voice lang to ENG and get status again if its worked and supported
+             */
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    int result = textToSpeech.setLanguage(Locale.US);
+                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Log.e("TTS", "Language not supported");
+                    }
+                } else {
+                    Log.e("TTS", "Initialization failed");
+                }
+            }
+        });
+
+
 
         // Display the image in the ImageView
-         imageView = findViewById(R.id.response);
-        if (imageData != null && !imageData.isEmpty()) {
-            // Set the image directly to ImageView using the URI
-            imageView.setImageURI(Uri.parse(imageData));
-            imageView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent e) {
-                    // Calculate relative coordinates
-                    float x = e.getX();
-                    float y = e.getY();
-                    Pair<Float, Float> clicked = new Pair<>(x, y);
-                    userChoice.add(clicked);
-                    return true; // Indicates that the touch event has been handled
+        ImageView imageView = findViewById(R.id.response);
+        File imgFile = new File(original);
+        if (imgFile.exists()) {
+            Log.d("DisplayImageActivity", "Image file exists: " + imgFile.getAbsolutePath());
 
-                }
-            });
+            // Load bitmap from file
+            bitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+
+
+            // Set bitmap to ImageView
+            imageView.setImageBitmap(bitmap);
+        } else {
+            Log.e("DisplayImageActivity", "Image file not found: " + imgFile.getAbsolutePath());
         }
+        TextView rec = findViewById(R.id.modelAnswer);
+        if (type != null && !type.isEmpty()){
+            rec.setText(type);
+//
+        }
+
 
 
         // Set onClickListener for the buttons
@@ -91,10 +111,50 @@ public class DisplayImageActivity extends AppCompatActivity {
         bad_rec.setOnClickListener(v -> askToHelpImprove());
 
 
+        OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(true) {
+            /**
+             * this function handle the case that if the user pressed return it finishes this intent and return to login.
+             */
+            @Override
+            public void handleOnBackPressed() {
+                finish(); // Uncomment this line if you want to finish the activity on back press
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+        ImageButton speaks = findViewById(R.id.voice);
+        speaks.setOnClickListener(v -> {
+            if (type != null) {
+                speakText(type);
+            }
+        });
+
     }
 
     /**
-     * after pressing the bad rec button ask him to help to improve.
+     * this function read the string that it gets loud in the phone.
+     * @param text that should be spoken.
+     */
+    private void speakText(String text) {
+        Log.d("TTS", "Speaking text: " + text);
+        if (textToSpeech != null) {
+            textToSpeech.setSpeechRate(0.8f);
+            int result = textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+            if (result == TextToSpeech.ERROR) {
+                Log.e("TTS", "Error while speaking text");
+            }
+        } else {
+            Log.e("TTS", "TextToSpeech instance is null");
+        }
+    }
+
+
+
+
+
+
+    /**
+     * after pressing the bad rec button ask him to help to improve and write his email adress so he will get
+     * email when the model will update.
      */
 
     @SuppressLint("SetTextI18n")
@@ -114,7 +174,14 @@ public class DisplayImageActivity extends AppCompatActivity {
                         // Send the email or perform other actions
                         Toast.makeText(DisplayImageActivity.this, "Great!", Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
-                        getWrongDetections();
+                        askTheRightRec(recognition -> {
+                            if (!recognition.isEmpty()) {
+                                sendRightTotheServer(emailAddress,recognition);
+                                finish();
+                            }
+                        });
+
+
                     } else {
                         askToHelpImprove();
                         Toast.makeText(DisplayImageActivity.this, "Invalid email address", Toast.LENGTH_SHORT).show();
@@ -129,12 +196,6 @@ public class DisplayImageActivity extends AppCompatActivity {
         ImageView bad = findViewById(R.id.bad_rec);
         good.setVisibility(View.GONE);
         bad.setVisibility(View.GONE);
-        Button end = findViewById(R.id.end);
-        end.setVisibility(View.VISIBLE);
-        end.setOnClickListener(v-> sendToTheServer(emailAddress));
-        TextView view = findViewById(R.id.tap);
-        view.setText("Choose all the wrong recognitions");
-        view.setVisibility(View.VISIBLE);
 
     }
 
@@ -148,35 +209,36 @@ public class DisplayImageActivity extends AppCompatActivity {
     }
 
     /**
-     *  send the email address and the user bad review to the server with the original picture.
-     * @param email
+     *  convert the bitmap image to byte so we can encode it to base64 to send it to the server
+     * @param bitmap the picture
+     * @return the picture in byte[]
      */
-    private void sendToTheServer(String email) {
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        float screenWidth = displayMetrics.widthPixels;
+    public byte[] convertBitmapToByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
+
+
+    /**
+     * This function is called when the detection is not good so we send to the server the right recognition that the
+     * user entered and his email and the picture so the model will be able to update.
+     * @param email the user email address
+     * @param rightRec the user  right recognition.
+     */
+    private void sendRightTotheServer(String email,String rightRec) {
         // Create OkHttpClient instance
         OkHttpClient client = new OkHttpClient();
+        String encodedImage = Base64.encodeToString(convertBitmapToByteArray(bitmap), Base64.DEFAULT);
 
-        // Assume you have a server endpoint where you send data
+
 
         // Create a JSON object to hold the data to be sent
         JSONObject postData = new JSONObject();
         try {
             postData.put("email", email);
-            postData.put("original", original);
-            JSONArray userChoicesArray = new JSONArray();
-            for (Pair<Float, Float> pair : badReview) {
-                float r_x = pair.first / screenWidth;  // Calculate relative x-coordinate
-                float r_y = pair.second / dpToPx();  // Calculate relative y-coordinate
-                JSONArray tuple = new JSONArray();
-                tuple.put(r_x);
-                tuple.put(r_y);
-                userChoicesArray.put(tuple);
-            }
-            postData.put("user_choices", userChoicesArray);
-            JSONArray labels = new JSONArray();
-            postData.put("labels", new JSONArray(reviews));
+            postData.put("original", encodedImage);
+            postData.put("rightRec",rightRec);
             /////////
         } catch (JSONException e) {
             e.printStackTrace();
@@ -211,132 +273,11 @@ public class DisplayImageActivity extends AppCompatActivity {
         finish();
     }
 
-    /**
-     * send to the server all the coordinates that the user pressed and the original picture so he will get
-     *  the rec of each fruit.
-     */
-    private void sendForRec() {
-        // Get screen dimensions
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        float screenWidth = displayMetrics.widthPixels;
-
-        // Prepare JSON object with user choices and original data
-        JSONObject requestData = new JSONObject();
-        try {
-            // Add original data
-            requestData.put("original", original);
-
-            // Add user choices as an array of tuples with relative coordinates
-            JSONArray userChoicesArray = new JSONArray();
-            for (Pair<Float, Float> pair : userChoice) {
-                float r_x = pair.first / screenWidth;  // Calculate relative x-coordinate
-                float r_y = pair.second / dpToPx();  // Calculate relative y-coordinate
-                JSONArray tuple = new JSONArray();
-                tuple.put(r_x);
-                tuple.put(r_y);
-                userChoicesArray.put(tuple);
-            }
-            requestData.put("user_choices", userChoicesArray);
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return;
-        }
-        // Create OkHttp client
-        OkHttpClient client = new OkHttpClient();
-
-// Create request body with JSON data
-        RequestBody requestBody = RequestBody.create( requestData.toString(),MediaType.parse("application/json"));
-// Create HTTP request
-        Request request = new Request.Builder()
-                .url(SERVER_URL2)
-                .post(requestBody)
-                .build();
-
-        // Execute the request asynchronously
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                e.printStackTrace();
-                ////// לבטלללללללללללללל נטו לבדיקה
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ImageView good = findViewById(R.id.good_rec);
-                        ImageView bad = findViewById(R.id.bad_rec);
-                        good.setVisibility(View.VISIBLE);
-                        bad.setVisibility(View.VISIBLE);
-                        Button done = findViewById(R.id.sendServer);
-                        done.setVisibility(View.GONE);
-                        TextView view = findViewById(R.id.tap);
-                        view.setVisibility(View.GONE);
-
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Unexpected code " + response);
-                }
-
-                // Get the response body as a byte array
-                byte[] imageData = response.body().bytes();
-
-                // Decode the byte array into a Bitmap
-                Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
-
-                // Update UI on the main thread
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // Set the Bitmap to the ImageView
-                        imageView.setImageBitmap(bitmap);
-                        ImageView good = findViewById(R.id.good_rec);
-                        ImageView bad = findViewById(R.id.bad_rec);
-                        good.setVisibility(View.VISIBLE);
-                        bad.setVisibility(View.VISIBLE);
-                        Button done = findViewById(R.id.sendServer);
-                        done.setVisibility(View.GONE);
-                        TextView view = findViewById(R.id.tap);
-                        view.setVisibility(View.GONE);
-                    }
-                });
-            }
-        });
-
-
-
-
-    }
 
     /**
-     * Function that converts dp to pixels
-     * @return converted pixels
+     * Here we ask the user to give the right recognition to the fruit so we will able to send it to the server.
+     * @param callback for the function that called this function.
      */
-
-    private int dpToPx() {
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round((float) 250 * density);
-    }
-    @SuppressLint("ClickableViewAccessibility")
-    private void getWrongDetections() {
-        imageView.setOnTouchListener((v, e) -> {
-            askTheRightRec(recognition -> {
-                if (!recognition.isEmpty()) {
-                    // Calculate relative coordinates
-                    float x = e.getX();
-                    float y = e.getY();
-                    Pair<Float, Float> clicked = new Pair<>(x, y);
-                    userChoice.add(clicked);
-                    reviews.add(recognition);
-                }
-            });
-            return true; // Indicates that the touch event has been handled
-        });
-
-    }
 
     @SuppressLint("SetTextI18n")
     private void askTheRightRec(RecognitionCallback callback) {
@@ -367,9 +308,9 @@ public class DisplayImageActivity extends AppCompatActivity {
     }
 
 
-
-
-    // Callback interface for returning recognition string
+    /**
+     * Callback interface for returning recognition string.
+     */
     interface RecognitionCallback {
         void onRecognitionProvided(String recognition);
     }
