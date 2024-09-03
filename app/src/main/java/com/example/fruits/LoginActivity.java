@@ -60,7 +60,7 @@ import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 100;
-    private static final String SERVER_URL = "https://5cc3-132-70-66-11.ngrok-free.app/upload";
+    private static final String SERVER_URL = "https://a4e6-132-70-66-10.ngrok-free.app/upload";
 
     private ExecutorService cameraExecutor;
     private boolean isCameraPermissionGranted = false;
@@ -140,7 +140,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * after pressing the pic button we first display the image to the user and than we let him draw rec on the fruit and send it
+     * after pressing the pic button we first display the image to the user and than we are letting him draw rectangle over the fruit and send it
      * to the server to detection after the user press the send button.
      */
     private void captureAndSendImage() {
@@ -163,6 +163,7 @@ public class LoginActivity extends AppCompatActivity {
                                 // we let him draw rec.
                                 DrawRectImageView drawRectImageView = findViewById(R.id.res);
                                 RectF drawnRect = drawRectImageView.getDrawnRect();
+                                // if the user pressed send after he draw a rec we want to take that rec and send to the server
                                 if (drawnRect != null) {
                                     // Get the original image bitmap and than we calculate the right coordinates.
                                     Bitmap originalBitmap = ((BitmapDrawable) drawRectImageView.getDrawable()).getBitmap();
@@ -232,7 +233,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     *  send the cropped image to the server.
+     *  send the cropped image to the server and get the response.
      * @param croppedImageData the image we want to send.
      * @return future that we got the res from the server.
      */
@@ -262,13 +263,10 @@ public class LoginActivity extends AppCompatActivity {
                     throw new IOException("Unexpected code " + response);
                 }
 
-                // If you need to process the response from the server, you can do it here
                 String responseBody = response.body().string();
 
-// Parse the JSON response
                 JSONObject jsonResponse = new JSONObject(responseBody);
 
-// Extract the value associated with the key "predicted_fruit"
                 res = jsonResponse.getString("predicted_fruit");
 
 
@@ -317,8 +315,6 @@ public class LoginActivity extends AppCompatActivity {
                     ImageView capturedImageView = findViewById(R.id.res);
                     capturedImageView.setImageBitmap(rotatedBitmap);
                     capturedImageView.setVisibility(View.VISIBLE);
-                    // Set appropriate scale type
-                    //capturedImageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
                 });
             } else {
                 // Use a Handler to post UI update operation to the main thread
@@ -339,7 +335,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     *  check if the image need to rotate and if so do it.
+     *  check if the image need to rotate and if so do it so the user will be able to see it right.
      * @param imageData the image that the user took
      * @return the degrees.
      */
@@ -371,7 +367,7 @@ public class LoginActivity extends AppCompatActivity {
 
 
     /**
-     * request camera Permission from the user.
+     * request camera Permission from the user so we can use the phone camera.
      */
 
     private void requestCameraPermission() {
@@ -395,7 +391,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * convert the image to byte array so we can use it.
+     * convert the image to byte array so we can use it and show it to the user.
      * @param imageProxy the image that the user took.
      * @return the pic in byte.
      */
@@ -423,13 +419,13 @@ public class LoginActivity extends AppCompatActivity {
 
 
 
-    private String extractBase64Image(String jsonResponse) {
-        // Assuming the JSON response is in the format {"processed_image":"<base64_string>"}
-        return jsonResponse.split("\"processed_image\":\"")[1].split("\"")[0];
-    }
+//    private String extractBase64Image(String jsonResponse) {
+//        // Assuming the JSON response is in the format {"processed_image":"<base64_string>"}
+//        return jsonResponse.split("\"processed_image\":\"")[1].split("\"")[0];
+//    }
 
     /**
-     * close the camera and open new intent after saving the cropped pic.
+     * close the camera and open new intent after saving the cropped pic for the rest of the app.
      */
     private void closeCamera() {
         if (cameraProvider != null) {
@@ -457,7 +453,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * save the image.
+     * save the image so we will be able to show it to the user at the new event.
       * @param base64String the image.
      * @return path to the file.
      */
@@ -488,6 +484,7 @@ private File saveBase64StringToFile(String base64String) {
         t.setVisibility(View.VISIBLE);
         Button send  = findViewById(R.id.send);
         send.setVisibility(View.GONE);
+        res = null;
         DrawRectImageView drawRectImageView = findViewById(R.id.res);
         drawRectImageView.setVisibility(View.GONE);
         drawRectImageView.clearDrawnRect();
