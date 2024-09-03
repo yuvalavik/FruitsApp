@@ -42,7 +42,7 @@ import okhttp3.Response;
 
 
 public class DisplayImageActivity extends AppCompatActivity {
-    private static final String SERVER_URL = "https://5cc3-132-70-66-11.ngrok-free.app/review";
+    private static final String SERVER_URL = "https://a4e6-132-70-66-10.ngrok-free.app/review";
     private String emailAddress;
 
     private boolean isDialogShown = false;
@@ -62,7 +62,7 @@ public class DisplayImageActivity extends AppCompatActivity {
 
         textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             /**
-             * this is override for the init of TextToSpeech API it checks if it got right status of sucsses and than try to set the
+             * this is override for the init of TextToSpeech API it checks if it got right status of success and than try to set the
              * voice lang to ENG and get status again if its worked and supported
              */
             @Override
@@ -95,6 +95,7 @@ public class DisplayImageActivity extends AppCompatActivity {
         } else {
             Log.e("DisplayImageActivity", "Image file not found: " + imgFile.getAbsolutePath());
         }
+        // set the text to the text we got from the server
         TextView rec = findViewById(R.id.modelAnswer);
         if (type != null && !type.isEmpty()){
             rec.setText(type);
@@ -153,8 +154,8 @@ public class DisplayImageActivity extends AppCompatActivity {
 
 
     /**
-     * after pressing the bad rec button ask him to help to improve and write his email adress so he will get
-     * email when the model will update.
+     * after pressing the bad rec button ask him to help to improve and write his email address so he will get
+     * email when the model will update according to his intentions.
      */
 
     @SuppressLint("SetTextI18n")
@@ -233,7 +234,7 @@ public class DisplayImageActivity extends AppCompatActivity {
 
 
 
-        // Create a JSON object to hold the data to be sent
+        // make a JSON object to hold the data to be sent
         JSONObject postData = new JSONObject();
         try {
             postData.put("email", email);
@@ -242,19 +243,16 @@ public class DisplayImageActivity extends AppCompatActivity {
             /////////
         } catch (JSONException e) {
             e.printStackTrace();
-            return; // Return early if there's an error creating JSON data
+            return;
         }
 
-        // Create a request body with the JSON data
         RequestBody requestBody = RequestBody.create(postData.toString(), MediaType.parse("application/json"));
 
-        // Build the request
         Request request = new Request.Builder()
                 .url(SERVER_URL)
                 .post(requestBody)
                 .build();
 
-        // Enqueue the request asynchronously
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -275,7 +273,7 @@ public class DisplayImageActivity extends AppCompatActivity {
 
 
     /**
-     * Here we ask the user to give the right recognition to the fruit so we will able to send it to the server.
+     * Here we ask the user to give the right recognition to the fruit so we will able to send it to the server to improve the model.
      * @param callback for the function that called this function.
      */
 
