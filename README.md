@@ -18,6 +18,7 @@ Tech Stack
 **Client-**
 
 Android Studio: For the mobile app interface and camera functionality.
+
 **Server-**
 
 Python: Handles image processing and runs the machine learning model.
@@ -29,8 +30,10 @@ Database
 MongoDB: Stores user feedback and email addresses for updates.
 
 **Server-**
+
 The server code is available here: [my server](https://github.com/EladSoffer/server_project)
 
 **Demo Video-**
+
 Watch the app in action on YouTube: [fruits](https://www.youtube.com/watch?v=STEd033O8QI)
 
