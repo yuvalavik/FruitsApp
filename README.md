@@ -16,8 +16,10 @@ This app allows users to capture images of fruits, send them to a server for pro
 Tech Stack
 
 **Client-**
+
 Android Studio: For the mobile app interface and camera functionality.
-**Server-*
+**Server-**
+
 Python: Handles image processing and runs the machine learning model.
 Flask: Provides RESTful API endpoints for communication with the app.
 Machine Learning
